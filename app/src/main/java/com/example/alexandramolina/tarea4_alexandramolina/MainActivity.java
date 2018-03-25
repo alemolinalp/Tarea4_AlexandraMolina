@@ -30,27 +30,6 @@ public class MainActivity extends AppCompatActivity {
     String link = "http://www.imdb.com/list/ls064079588/";
     ArrayList<Movie> movies = new ArrayList<>();
 
-    @Override
-    protected Bitmap doInBackground(String... urls){
-
-        try {
-            URL url = new URL(urls[0]);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.connect();
-            InputStream inputStream = connection.getInputStream();
-            Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
-            return bitmap;
-
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return null;
-
-    }
-
     public class DownloadTask extends AsyncTask<String, Void, String> {
 
         @Override
@@ -103,6 +82,30 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    public class DownloadTaskImage extends AsyncTask<String, Void, Bitmap> {
+
+        @Override
+        protected Bitmap doInBackground(String... urls) {
+
+            try {
+                URL url = new URL(urls[0]);
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                connection.connect();
+                InputStream inputStream = connection.getInputStream();
+                Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+                return bitmap;
+
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -110,6 +113,9 @@ public class MainActivity extends AppCompatActivity {
 
         DownloadTask downloadTask = new DownloadTask();
         String results;
+        String image;
+        String rating;
+        String name;
 
         GridView gridView = findViewById(R.id.gridView);
         MovieAdapter adapter;
@@ -117,22 +123,34 @@ public class MainActivity extends AppCompatActivity {
         try {
             results = downloadTask.execute(link).get();
 
+
             Document doc = Jsoup.parse(results);
 
             Elements names = doc.select(".lister-list .lister-item .lister-item-content .lister-item-header a");
             Elements ratings = doc.select(".lister-list .lister-item .lister-item-content .ratings-bar .inline-block strong");
-            //Elements metascores = doc.select(".lister-list .lister-item .lister-item-content .ratings-bar .inline-block .ratings-metascore span");
+            Elements metascores = doc.select("span.metascore");
+            Elements images = doc.select("div.lister-item-image a img");
 
             for(int i = 0; i < names.size(); i++) {
                 movies.add(new Movie());
-                String name = names.get(i).text().substring(names.get(i).text().lastIndexOf('.') + 1);
+                name = names.get(i).text().substring(names.get(i).text().lastIndexOf('.') + 1);
                 movies.get(i).setName(name);
-                String rating = ratings.get(i).text().substring(ratings.get(i).text().lastIndexOf(',') + 1);
+                rating = ratings.get(i).text().substring(ratings.get(i).text().lastIndexOf(',') + 1);
                 movies.get(i).setRating(Float.parseFloat(rating));
-                //String metascore = metascores.get(i).text().substring(metascores.get(i).text().lastIndexOf('7'));
-                //movies.get(i).setMetascore(Integer.parseInt(metascore));
-                //Log.d("Id:", Integer.toString(i));
+                image = images.get(i).attr("loadlate");
+                movies.get(i).setImageUrl(image);
+            }
+
+            for(int j = 0; j < 93; j++) {
+                String metascore = metascores.get(j).text();
+                movies.get(j).setMetascore(Integer.parseInt(metascore));
+                //Log.d("Id:", Integer.toString(j));
                 //Log.d("Metas:", metascore);
+            }
+
+            for(int x = 0; x < movies.size();x++){
+                DownloadTaskImage downloadTaskImage = new DownloadTaskImage();
+                movies.get(x).setImage(downloadTaskImage.execute(movies.get(x).getImageUrl()).get());
             }
 
         } catch (InterruptedException e) {

@@ -70,11 +70,16 @@ public class MovieAdapter extends BaseAdapter {
         final Movie movie = arrayList.get(i);
         viewHolder.txt_name.setText(movie.getName());
         viewHolder.txt_rating.setText(Float.toString(movie.getRating()));
-        //viewHolder.txt_metascore.setText(Float.toString(movie.getMetascore()));
-        viewHolder.ratingBar.setRating(Float.parseFloat("2.0"));
-        //viewHolder.imageView.setImageBitmap(movie.getImage());
+        viewHolder.txt_metascore.setText("Metascore: " + Float.toString(movie.getMetascore()));
+        float s = stars(movie.getRating());
+        viewHolder.ratingBar.setRating(Float.parseFloat(Float.toString(s)));
+        viewHolder.imageView.setImageBitmap(movie.getImage());
 
         return view;
+    }
+    public float stars(float s){
+        float r = (s*5)/10;
+        return r;
     }
 
 }
